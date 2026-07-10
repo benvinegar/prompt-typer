@@ -20,7 +20,7 @@ export function GameScreen() {
     const { phase, messages, currentPrompt, typedCount, lastKeyWasError, readyToSubmit, remainingMs, stats } =
         snapshot;
 
-    const transcriptEndRef = useRef<HTMLDivElement>(null);
+    const transcriptRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (phase !== 'typing') {
@@ -42,18 +42,37 @@ export function GameScreen() {
     }, [phase, handleKey]);
 
     useEffect(() => {
-        transcriptEndRef.current?.scrollIntoView({ block: 'end' });
+        const el = transcriptRef.current;
+        if (el) {
+            el.scrollTop = el.scrollHeight;
+        }
     }, [messages, phase]);
+
+    // While an agent message is revealing char-by-char (UI-side animation, invisible to the
+    // snapshot), keep the transcript pinned to the bottom.
+    const isStreaming = messages.some((message) => message.streaming);
+    useEffect(() => {
+        if (!isStreaming) {
+            return;
+        }
+        const id = setInterval(() => {
+            const el = transcriptRef.current;
+            if (el) {
+                el.scrollTop = el.scrollHeight;
+            }
+        }, 100);
+        return () => clearInterval(id);
+    }, [isStreaming]);
 
     if (phase === 'idle') {
         return <StartScreen onStart={start} />;
     }
 
     return (
-        <div className="flex min-h-dvh flex-col bg-bg">
+        <div className="flex h-dvh flex-col overflow-hidden bg-bg">
             <Hud remainingMs={remainingMs} wpm={stats.wpm} accuracy={stats.accuracy} phase={phase} />
 
-            <div className="scrollbar-thin flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+            <div ref={transcriptRef} className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
                 <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
                     {messages.map((message) => (
                         <MessageBubble
@@ -63,7 +82,6 @@ export function GameScreen() {
                         />
                     ))}
                     {phase === 'thinking' && <ThinkingIndicator />}
-                    <div ref={transcriptEndRef} />
                 </div>
             </div>
 

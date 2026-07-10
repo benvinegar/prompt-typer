@@ -38,10 +38,16 @@ export function TypingComposer({ prompt, typedCount, lastKeyWasError, readyToSub
                 <span className="text-ink">{typed}</span>
                 {current && (
                     <span
-                        className={`relative underline decoration-2 underline-offset-4 ${
-                            lastKeyWasError ? 'bg-danger text-white' : 'bg-accent-soft text-ink'
+                        className={`relative rounded-[2px] underline decoration-2 underline-offset-4 ${
+                            lastKeyWasError
+                                ? 'bg-danger text-white decoration-danger'
+                                : 'bg-accent/15 text-ink-dim decoration-accent-bright'
                         }`}
                     >
+                        <span
+                            aria-hidden="true"
+                            className="animate-caret-blink absolute inset-y-0 -left-px w-0.5 rounded-full bg-accent-bright"
+                        />
                         {current}
                     </span>
                 )}
