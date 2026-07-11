@@ -8,9 +8,21 @@ export interface ResultsModalProps {
     onClose: () => void;
 }
 
+/** Joke $/1M-token rate used for the fake bill. Precise-looking numbers are funnier. */
+const FAKE_DOLLARS_PER_MILLION_TOKENS = 23.7;
+
+function formatTokens(tokens: number): string {
+    return Math.floor(tokens).toLocaleString('en-US');
+}
+
+function fakeCost(tokens: number): string {
+    return `$${((tokens / 1_000_000) * FAKE_DOLLARS_PER_MILLION_TOKENS).toFixed(2)}`;
+}
+
 /** Builds the shareable brag text using the player's actual run stats. */
 function buildShareText(stats: GameStats, title: string): string {
-    return `My vibe coding interview verdict: "${title}" — ${stats.wpm} WPM, ${stats.accuracy}% acc, ${stats.tokensPerSecond} tok/s. Think you'd get the offer? Prompt Faster`;
+    const subagents = stats.subagentCount > 0 ? ` My copilot burned ${formatTokens(stats.tokensBurned)} tokens and left ${stats.subagentCount} subagents running.` : '';
+    return `My vibe coding interview verdict: "${title}" — ${stats.wpm} WPM, ${stats.accuracy}% acc, ${stats.tokensPerSecond} tok/s.${subagents} Think you'd get the offer? Prompt Faster`;
 }
 
 /** Dark overlay + centered, screenshot-friendly card showing the final rank and stat grid. */
@@ -95,7 +107,22 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                         </div>
                         <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Errors</div>
                     </div>
+
+                    <div className="col-span-2 rounded-2xl border border-border bg-bg-panel px-4 py-3 text-center">
+                        <div className="font-mono text-2xl font-semibold tabular-nums text-accent-bright">
+                            {formatTokens(stats.tokensBurned)}
+                        </div>
+                        <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">
+                            tokens burned by your copilot (est. {fakeCost(stats.tokensBurned)})
+                        </div>
+                    </div>
                 </div>
+
+                {stats.subagentCount > 0 && (
+                    <p className="mt-3 text-center text-xs text-ink-faint">
+                        * {stats.subagentCount} subagents are still running. This is now your problem.
+                    </p>
+                )}
 
                 <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
                     <button

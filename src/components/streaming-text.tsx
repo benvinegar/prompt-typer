@@ -36,16 +36,19 @@ export function StreamingText({ text, streaming, onDone, msPerChar }: StreamingT
         doneFiredRef.current = false;
         setRevealCount(0);
 
+        // Reveal is a function of elapsed time, not tick count, so throttled timers (background
+        // tabs, slow devices) catch up in one tick instead of crawling one char per tick.
+        const startedAt = performance.now();
         let cancelled = false;
-        let index = 0;
 
         const tick = () => {
             if (cancelled) {
                 return;
             }
-            index += 1;
-            setRevealCount(Math.min(index, text.length));
-            if (index >= text.length) {
+            const elapsed = performance.now() - startedAt;
+            const revealed = Math.min(text.length, Math.max(1, Math.floor(elapsed / charDelayRef.current)));
+            setRevealCount(revealed);
+            if (revealed >= text.length) {
                 return;
             }
             timeoutId = window.setTimeout(tick, charDelayRef.current);

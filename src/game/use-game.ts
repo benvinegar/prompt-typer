@@ -26,6 +26,15 @@ const TICK_MS = 60;
 const THINKING_DELAY_MIN_MS = 600;
 const THINKING_DELAY_MAX_MS = 900;
 
+/** Cadence of the comedic token-burn meter. */
+const BURN_TICK_MS = 100;
+/** Baseline tokens/sec burned while the agent is "working" (streaming or thinking). */
+const BURN_RATE_AGENT_ACTIVE = 320;
+/** Baseline tokens/sec while the agent idles waiting on the human (someone left the context on). */
+const BURN_RATE_AGENT_IDLE = 6;
+/** Additional tokens/sec burned by EACH ripping subagent, forever. */
+const BURN_RATE_PER_SUBAGENT = 480;
+
 /** The shape returned by {@link useGame}. */
 export interface UseGameReturn {
     snapshot: GameSnapshot;
@@ -56,6 +65,8 @@ interface EngineState {
     totalKeystrokes: number;
     promptsCompleted: number;
     activeTypingMs: number;
+    tokensBurned: number;
+    subagentCount: number;
 
     /** Shuffled queue of scenarios; reshuffled and continued when exhausted. */
     queue: Scenario[];
@@ -91,6 +102,8 @@ function createIdleState(): EngineState {
         totalKeystrokes: 0,
         promptsCompleted: 0,
         activeTypingMs: 0,
+        tokensBurned: 0,
+        subagentCount: 0,
         queue: [],
         queueIndex: -1,
         streamKind: null,
@@ -130,6 +143,8 @@ class GameEngine {
     private lastTickAt = 0;
     private errorFlashHandle: ReturnType<typeof setTimeout> | null = null;
     private thinkingHandle: ReturnType<typeof setTimeout> | null = null;
+    private burnHandle: ReturnType<typeof setInterval> | null = null;
+    private lastBurnAt = 0;
 
     constructor() {
         this.cachedSnapshot = this.buildSnapshot();
@@ -153,12 +168,15 @@ class GameEngine {
             typedCount: s.typedCount,
             lastKeyWasError: s.lastKeyWasError,
             remainingMs: s.remainingMs,
+            subagentCount: s.subagentCount,
             stats: computeStats({
                 correctChars: s.correctChars,
                 errors: s.errors,
                 totalKeystrokes: s.totalKeystrokes,
                 promptsCompleted: s.promptsCompleted,
                 activeTypingMs: s.activeTypingMs,
+                tokensBurned: s.tokensBurned,
+                subagentCount: s.subagentCount,
             }),
         };
     }
@@ -183,7 +201,42 @@ class GameEngine {
             clearTimeout(this.thinkingHandle);
             this.thinkingHandle = null;
         }
+        this.stopBurn();
     }
+
+    /** Starts the comedic token-burn meter; runs for the whole game regardless of phase. */
+    private startBurn(): void {
+        if (this.burnHandle !== null) {
+            return;
+        }
+        this.lastBurnAt = Date.now();
+        this.burnHandle = setInterval(this.onBurnTick, BURN_TICK_MS);
+    }
+
+    private stopBurn(): void {
+        if (this.burnHandle !== null) {
+            clearInterval(this.burnHandle);
+            this.burnHandle = null;
+        }
+    }
+
+    private onBurnTick = (): void => {
+        const s = this.state;
+        if (s.phase === 'idle' || s.phase === 'finished') {
+            return;
+        }
+        const now = Date.now();
+        const deltaSec = (now - this.lastBurnAt) / 1_000;
+        this.lastBurnAt = now;
+
+        const agentActive = s.phase === 'streaming' || s.phase === 'thinking';
+        const baseRate = agentActive ? BURN_RATE_AGENT_ACTIVE : BURN_RATE_AGENT_IDLE;
+        const rate = baseRate + s.subagentCount * BURN_RATE_PER_SUBAGENT;
+        // Jitter makes the meter feel like real, slightly panicked usage telemetry.
+        s.tokensBurned += rate * deltaSec * (0.7 + Math.random() * 0.6);
+
+        this.emit();
+    };
 
     /**
      * Enters 'typing' phase. The countdown does NOT start yet — reading the prompt is free.
@@ -231,6 +284,7 @@ class GameEngine {
         if (this.state.remainingMs <= 0) {
             this.state.remainingMs = 0;
             this.stopClock();
+            this.stopBurn();
             this.state.phase = 'finished';
             this.state.currentPrompt = null;
         }
@@ -261,6 +315,7 @@ class GameEngine {
 
         const opening = OPENING_MESSAGES[Math.floor(Math.random() * OPENING_MESSAGES.length)] ?? '';
         this.pushStreamingAgentMessage(opening, 'opening');
+        this.startBurn();
 
         this.emit();
     };
@@ -374,6 +429,7 @@ class GameEngine {
 
         // The flush above may have consumed the last of the clock on the final keystroke.
         if (s.remainingMs <= 0) {
+            this.stopBurn();
             s.phase = 'finished';
             this.emit();
             return;
@@ -390,6 +446,12 @@ class GameEngine {
             this.thinkingHandle = null;
             if (this.state.phase !== 'thinking') {
                 return;
+            }
+            // Any subagents "launched" by this response start burning tokens immediately (forever).
+            for (const beat of scenario.response) {
+                if (beat.kind === 'subagents') {
+                    this.state.subagentCount += beat.count;
+                }
             }
             this.pushStreamingAgentMessage('', 'response', scenario.response);
             this.emit();

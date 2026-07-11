@@ -81,12 +81,14 @@ export const SCENARIOS: Scenario[] = [
             { kind: 'tool', name: 'Write', detail: 'src/lib/ai-chatbot.ts  (new, 340 lines)', durationMs: 700 },
             { kind: 'tool', name: 'Edit', detail: 'AddTodoButton.tsx  (wired to GPT-oracle)', durationMs: 500 },
             {
-                kind: 'thinking',
-                text: 'Nobody asked what the AI does. That is not a gap in the plan, that is the whole plan.',
+                kind: 'subagents',
+                count: 3,
+                detail: 'prompt-engineer, vibe-checker, pitch-deck-writer',
+                durationMs: 500,
             },
             {
                 kind: 'text',
-                text: 'Wired a chatbot into the todo list that, when asked to add "buy milk," responds with a 400-word essay on the philosophy of dairy consumption before adding the item. Investors loved the demo. Nobody asked what it does. Mission accomplished.',
+                text: 'Wired a chatbot into the todo list that, when asked to add "buy milk," responds with a 400-word essay on the philosophy of dairy consumption before adding the item. 3 subagents are ripping on the pitch deck. Control is yours, next task while they cook.',
             },
         ],
     },
@@ -177,10 +179,15 @@ export const SCENARIOS: Scenario[] = [
                 text: 'One user, one todo, one word: milk. This clearly calls for a service mesh.',
             },
             { kind: 'tool', name: 'Write', detail: 'services/  (12 new dirs, 1 k8s cluster)', durationMs: 800 },
-            { kind: 'tool', name: 'Bash', detail: 'curl -X POST /todos  (4 hops, 340ms, +1 crisis)', durationMs: 600 },
+            {
+                kind: 'subagents',
+                count: 8,
+                detail: 'each one is rewriting a different microservice',
+                durationMs: 600,
+            },
             {
                 kind: 'text',
-                text: 'Todo app now consists of twelve services, a message queue, and a Kubernetes cluster, all coordinating to store the word "milk." Adding a single todo now involves four network hops and one existential crisis. Latency is up nine thousand percent. Resume-worthy.',
+                text: 'Todo app now consists of twelve services, a message queue, and a Kubernetes cluster, all coordinating to store the word "milk." 8 subagents are ripping, one per service, none of them aware the others exist. Control is yours, next task while they cook.',
             },
         ],
     },
@@ -267,10 +274,15 @@ export const SCENARIOS: Scenario[] = [
         response: [
             { kind: 'tool', name: 'Bash', detail: 'rm -rf src/  (old app: 100% deleted)', durationMs: 500 },
             { kind: 'tool', name: 'Bash', detail: 'npx create-hyped-framework-app  (rewrite: 12% complete)', durationMs: 700 },
-            { kind: 'tool', name: 'Web Search', detail: 'hyped-framework docs  (1 Discord server, "coming soon")', durationMs: 550 },
+            {
+                kind: 'subagents',
+                count: 15,
+                detail: 'one per route, none have read the hyped-framework docs',
+                durationMs: 600,
+            },
             {
                 kind: 'text',
-                text: 'Rewrite is 12 percent complete, the old app is 100 percent deleted, and the new framework had a breaking release six hours after we started. Documentation currently consists of one Discord server and a README that says "coming soon." We are extremely agile.',
+                text: 'Rewrite is 12 percent complete, the old app is 100 percent deleted, and the new framework had a breaking release six hours after we started. 15 subagents are ripping on the migration. Control is yours, next task while they cook, forever probably.',
             },
         ],
     },
@@ -297,10 +309,15 @@ export const SCENARIOS: Scenario[] = [
         prompt: 'Only test the happy path before the demo, if we click anything else we might learn something bad.',
         response: [
             { kind: 'tool', name: 'Tests', detail: 'pnpm test -- happy-path  (1 passed, 47 skipped)', durationMs: 550 },
-            { kind: 'tool', name: 'Bash', detail: 'open demo  (investor clicked button #2)', durationMs: 500 },
+            {
+                kind: 'subagents',
+                count: 40,
+                detail: 'one per skipped test, each pretending it would have passed',
+                durationMs: 600,
+            },
             {
                 kind: 'text',
-                text: 'Demo executed flawlessly along the one blessed path we rehearsed six times. An investor clicked a second button out of curiosity and the app is now displaying a raw JSON error in Comic Sans. I have described this as "an easter egg."',
+                text: 'Demo executed flawlessly along the one blessed path we rehearsed six times. 40 subagents are ripping through the other 47 tests just in case. Control is yours, next task while they cook, results arriving never.',
             },
         ],
     },
@@ -314,6 +331,28 @@ export const SCENARIOS: Scenario[] = [
             {
                 kind: 'text',
                 text: 'Folder now contains final.js, final_v2.js, final_ACTUALLY.js, and final_ACTUALLY_v2_USE_THIS_ONE.js. Nobody, including me, knows which one is deployed. I have opened a poll. Democracy will decide what ships to production.',
+            },
+        ],
+    },
+    {
+        id: 'agent-per-file',
+        agentSetup: 'Bonus round. The repo has some untouched files. How aggressively do we parallelize?',
+        prompt: 'Spawn a subagent for every single file in the repo and have them all refactor at the same time.',
+        response: [
+            {
+                kind: 'thinking',
+                text: 'One file, one agent, zero coordination. This is either parallelism or a riot. Only one way to find out.',
+            },
+            { kind: 'tool', name: 'Bash', detail: 'find . -type f | wc -l  (128 files, no survivors)', durationMs: 500 },
+            {
+                kind: 'subagents',
+                count: 128,
+                detail: 'auth-rewriter, test-deleter, vibe-auditor, +125 more',
+                durationMs: 700,
+            },
+            {
+                kind: 'text',
+                text: '128 subagents are ripping, one per file, none of them aware the others exist or that main.ts imports from all of them. The token burn meter has entered a new tax bracket. Control is yours, next task while they cook, and possibly while everything burns.',
             },
         ],
     },

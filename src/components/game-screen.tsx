@@ -69,7 +69,14 @@ export function GameScreen() {
 
     return (
         <div className="flex h-dvh flex-col overflow-hidden bg-bg">
-            <Hud remainingMs={remainingMs} wpm={stats.wpm} accuracy={stats.accuracy} phase={phase} />
+            <Hud
+                remainingMs={remainingMs}
+                wpm={stats.wpm}
+                accuracy={stats.accuracy}
+                tokensBurned={stats.tokensBurned}
+                subagentCount={snapshot.subagentCount}
+                phase={phase}
+            />
 
             <div ref={transcriptRef} className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
                 <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">

@@ -6,6 +6,8 @@ export interface HudProps {
     remainingMs: number;
     wpm: number;
     accuracy: number;
+    tokensBurned: number;
+    subagentCount: number;
     phase: GamePhase;
 }
 
@@ -15,8 +17,12 @@ function formatClock(ms: number): string {
     return `${seconds.toFixed(1)}s`;
 }
 
-/** Top HUD bar: countdown clock, live WPM/accuracy, and a "clock frozen" hint while not typing. */
-export function Hud({ remainingMs, wpm, accuracy, phase }: HudProps) {
+/**
+ * Top HUD bar: countdown clock, a "clock frozen" hint while the agent works, the comedic
+ * ever-rising token-burn meter (with a subagent chip once the agent starts delegating),
+ * and live WPM/accuracy.
+ */
+export function Hud({ remainingMs, wpm, accuracy, tokensBurned, subagentCount, phase }: HudProps) {
     const isLow = phase === 'typing' && remainingMs < LOW_TIME_THRESHOLD_MS;
     const isFrozen = phase === 'streaming' || phase === 'thinking';
 
@@ -44,11 +50,26 @@ export function Hud({ remainingMs, wpm, accuracy, phase }: HudProps) {
                     </span>
                 )}
             </div>
-            <div className="flex items-center gap-4 font-mono text-xs text-ink-dim sm:text-sm">
+            <div className="flex items-center gap-3 font-mono text-xs text-ink-dim sm:gap-4 sm:text-sm">
+                {subagentCount > 0 && (
+                    <span className="flex items-center gap-1.5 rounded-full border border-accent-dim bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-bright">
+                        <span
+                            aria-hidden="true"
+                            className="h-2.5 w-2.5 animate-spin rounded-full border border-accent-dim border-t-accent-bright"
+                        />
+                        <span className="tabular-nums">{subagentCount}</span> agents
+                    </span>
+                )}
+                <span className="hidden tabular-nums sm:inline" title="tokens burned (they are not coming back)">
+                    <span className={subagentCount > 0 ? 'text-accent-bright' : 'text-ink'}>
+                        {Math.floor(tokensBurned).toLocaleString('en-US')}
+                    </span>{' '}
+                    tok
+                </span>
                 <span>
                     <span className="text-ink">{wpm}</span> wpm
                 </span>
-                <span>
+                <span className="hidden sm:inline">
                     <span className="text-ink">{accuracy}</span>% acc
                 </span>
             </div>

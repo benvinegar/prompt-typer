@@ -4,6 +4,8 @@ import { StreamingText } from '@/components/streaming-text';
 
 /** Spinner time for tool beats that don't specify their own duration. */
 const DEFAULT_TOOL_MS = 700;
+/** How long a subagents beat holds the sequence before handing control on (the spinner never stops). */
+const DEFAULT_SUBAGENTS_MS = 1100;
 /** Thinking blocks reveal faster than spoken text, like a model racing through reasoning. */
 const THINKING_MS_PER_CHAR = 8;
 /** Final reply text reveals slightly faster than plain messages to keep total playtime snappy. */
@@ -32,6 +34,22 @@ function ToolRow({ name, detail, active }: { name: string; detail: string; activ
         <div className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-bg-elevated px-2.5 py-1.5 font-mono text-[13px]">
             {active ? <Spinner /> : <CheckIcon />}
             <span className="shrink-0 font-semibold text-ink">{name}</span>
+            <span className="truncate text-ink-dim">{detail}</span>
+        </div>
+    );
+}
+
+/**
+ * A "launching subagents" row. Unlike tool rows this never resolves to a checkmark —
+ * the spinner rips forever, because the subagents are, of course, still working.
+ */
+function SubagentsRow({ count, detail }: { count: number; detail: string }) {
+    return (
+        <div className="flex min-w-0 items-center gap-2 rounded-lg border border-accent-dim bg-accent-soft px-2.5 py-1.5 font-mono text-[13px]">
+            <Spinner />
+            <span className="shrink-0 font-semibold text-accent-bright">
+                Agents <span className="tabular-nums">x{count}</span>
+            </span>
             <span className="truncate text-ink-dim">{detail}</span>
         </div>
     );
@@ -70,13 +88,14 @@ export function AgentResponseBeats({ beats, streaming, onDone }: AgentResponseBe
 
     const advance = () => setPlayedCount((count) => Math.min(count + 1, beats.length));
 
-    // Tool beats complete on a timer (thinking/text beats advance via StreamingText's onDone).
+    // Tool and subagents beats complete on a timer (thinking/text beats advance via onDone).
     const activeBeat = streaming && playedCount < beats.length ? beats[playedCount] : undefined;
     useEffect(() => {
-        if (activeBeat === undefined || activeBeat.kind !== 'tool') {
+        if (activeBeat === undefined || (activeBeat.kind !== 'tool' && activeBeat.kind !== 'subagents')) {
             return;
         }
-        const id = window.setTimeout(advance, activeBeat.durationMs ?? DEFAULT_TOOL_MS);
+        const fallbackMs = activeBeat.kind === 'tool' ? DEFAULT_TOOL_MS : DEFAULT_SUBAGENTS_MS;
+        const id = window.setTimeout(advance, activeBeat.durationMs ?? fallbackMs);
         return () => window.clearTimeout(id);
     }, [activeBeat]);
 
@@ -98,6 +117,8 @@ export function AgentResponseBeats({ beats, streaming, onDone }: AgentResponseBe
                         return <ThinkingBlock key={index} text={beat.text} active={active} onDone={advance} />;
                     case 'tool':
                         return <ToolRow key={index} name={beat.name} detail={beat.detail} active={active} />;
+                    case 'subagents':
+                        return <SubagentsRow key={index} count={beat.count} detail={beat.detail} />;
                     case 'text':
                         return (
                             <div key={index}>

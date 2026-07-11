@@ -41,6 +41,15 @@ export type ResponseBeat =
           durationMs?: number;
       }
     | {
+          kind: 'subagents';
+          /** Number of subagents "launched". Each one permanently multiplies the token burn rate. */
+          count: number;
+          /** Short roster/description, e.g. 'auth-rewriter, test-deleter, +3 more'. */
+          detail: string;
+          /** Delay before the sequence advances. The spinner itself never resolves — they just rip. */
+          durationMs?: number;
+      }
+    | {
           kind: 'text';
           /** The streamed reply text (the punchline). */
           text: string;
@@ -99,6 +108,10 @@ export interface GameStats {
     promptsCompleted: number;
     /** Milliseconds of clock actually consumed (<= GAME_DURATION_MS). */
     activeTypingMs: number;
+    /** Joke stat: tokens "burned" by the agent and its subagents. Only ever goes up. */
+    tokensBurned: number;
+    /** Subagents "running" by the end of the run. */
+    subagentCount: number;
 }
 
 /** Everything the UI needs to render a frame of the game. */
@@ -114,5 +127,7 @@ export interface GameSnapshot {
     lastKeyWasError: boolean;
     /** Clock remaining, ms. Only decreases during 'typing', after the first keystroke of a prompt. */
     remainingMs: number;
+    /** Subagents currently "running" (never finish; each multiplies the token burn rate). */
+    subagentCount: number;
     stats: GameStats;
 }
