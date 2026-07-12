@@ -86,14 +86,8 @@ export const SCENARIOS: Scenario[] = [
             { kind: 'tool', name: 'Write', detail: 'src/lib/ai-chatbot.ts  (new, 340 lines)', durationMs: 700 },
             { kind: 'tool', name: 'Edit', detail: 'AddTodoButton.tsx  (wired to GPT-oracle)', durationMs: 500 },
             {
-                kind: 'subagents',
-                count: 3,
-                detail: 'prompt-engineer, vibe-checker, pitch-deck-writer',
-                durationMs: 500,
-            },
-            {
                 kind: 'text',
-                text: 'Wired a chatbot into the todo list that, when asked to add "buy milk," responds with a 400-word essay on the philosophy of dairy consumption before adding the item. 3 subagents are ripping on the pitch deck. Control is yours, next task while they cook.',
+                text: 'Wired a chatbot into the todo list that, when asked to add "buy milk," responds with a 400-word essay on the philosophy of dairy consumption before adding the item. The usage dashboard now shows a big number going up. Nobody has asked what the number measures. Ship it.',
             },
         ],
     },
@@ -191,14 +185,8 @@ export const SCENARIOS: Scenario[] = [
             },
             { kind: 'tool', name: 'Write', detail: 'services/  (12 new dirs, 1 k8s cluster)', durationMs: 800 },
             {
-                kind: 'subagents',
-                count: 8,
-                detail: 'each one is rewriting a different microservice',
-                durationMs: 600,
-            },
-            {
                 kind: 'text',
-                text: 'Todo app now consists of twelve services, a message queue, and a Kubernetes cluster, all coordinating to store the word "milk." 8 subagents are ripping, one per service, none of them aware the others exist. Control is yours, next task while they cook.',
+                text: 'Todo app now consists of twelve services, a message queue, and a Kubernetes cluster, all coordinating to store the word "milk." The architecture diagram is fifty percent arrows and fifty percent silence about what happens if any single node goes down. The board loved it.',
             },
         ],
     },
@@ -292,14 +280,8 @@ export const SCENARIOS: Scenario[] = [
             { kind: 'tool', name: 'Bash', detail: 'rm -rf src/  (old app: 100% deleted)', durationMs: 500 },
             { kind: 'tool', name: 'Bash', detail: 'npx create-hyped-framework-app  (rewrite: 12% complete)', durationMs: 700 },
             {
-                kind: 'subagents',
-                count: 15,
-                detail: 'one per route, none have read the hyped-framework docs',
-                durationMs: 600,
-            },
-            {
                 kind: 'text',
-                text: 'Rewrite is 12 percent complete, the old app is 100 percent deleted, and the new framework had a breaking release six hours after we started. 15 subagents are ripping on the migration. Control is yours, next task while they cook, forever probably.',
+                text: 'Rewrite is 12 percent complete, the old app is 100 percent deleted, and the new framework had a breaking release six hours after we started. I have promised leadership Friday. I have not told leadership which Friday.',
             },
         ],
     },
@@ -329,14 +311,8 @@ export const SCENARIOS: Scenario[] = [
         response: [
             { kind: 'tool', name: 'Tests', detail: 'pnpm test -- happy-path  (1 passed, 47 skipped)', durationMs: 550 },
             {
-                kind: 'subagents',
-                count: 40,
-                detail: 'one per skipped test, each pretending it would have passed',
-                durationMs: 600,
-            },
-            {
                 kind: 'text',
-                text: 'Demo executed flawlessly along the one blessed path we rehearsed six times. 40 subagents are ripping through the other 47 tests just in case. Control is yours, next task while they cook, results arriving never.',
+                text: 'Demo executed flawlessly along the one blessed path we rehearsed six times. The investor deck now says "full suite passing," which is technically a sentence I typed and therefore technically true. Q&A has been rescheduled to never.',
             },
         ],
     },
@@ -366,14 +342,8 @@ export const SCENARIOS: Scenario[] = [
             },
             { kind: 'tool', name: 'Bash', detail: 'find . -type f | wc -l  (128 files, no survivors)', durationMs: 500 },
             {
-                kind: 'subagents',
-                count: 128,
-                detail: 'auth-rewriter, test-deleter, vibe-auditor, +125 more',
-                durationMs: 700,
-            },
-            {
                 kind: 'text',
-                text: '128 subagents are ripping, one per file, none of them aware the others exist or that main.ts imports from all of them. The token burn meter has entered a new tax bracket. Control is yours, next task while they cook, and possibly while everything burns.',
+                text: 'Funny you ask. The swarm you are picturing was already dispatched, one agent per file, before you finished typing the question. Velocity metric: 128 and rising. Coordination metric: not a metric we track here.',
             },
         ],
     },

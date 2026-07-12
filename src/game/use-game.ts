@@ -15,6 +15,7 @@ import { buildReportBeats } from '@/data/agent-reports';
 import { buildCompactionSummary, buildCompactionThinkingBeats } from '@/data/compactions';
 import { OPENING_MESSAGES } from '@/data/greetings';
 import { SCENARIOS } from '@/data/scenarios';
+import { buildSwarmBeat, type SwarmTier } from '@/data/swarms';
 import { computeStats } from '@/game/scoring';
 import {
     GAME_DURATION_MS,
@@ -42,14 +43,23 @@ const BURN_TICK_MS = 100;
 const BURN_RATE_AGENT_ACTIVE = 3200;
 /** Baseline tokens/sec while the agent idles waiting on the human (someone left the context on). */
 const BURN_RATE_AGENT_IDLE = 60;
-/** Additional tokens/sec burned by EACH ripping subagent, forever. */
-const BURN_RATE_PER_SUBAGENT = 4800;
+/**
+ * Additional tokens/sec burned by EACH ripping subagent, forever. Tuned (see the simulation in
+ * `pnpm`-external scratchpad, not checked in) so that the engine-injected swarms at rounds 2/4/6
+ * (see {@link swarmTierForRound}) are what carries the score into the hundreds-of-millions/low-
+ * billions range for fast typists -- reaching those deeper rounds, not luck, is what unlocks it.
+ */
+const BURN_RATE_PER_SUBAGENT = 80_000;
 /**
  * Per-prompt compounding multiplier applied to the burn rate: the deeper the interview goes,
  * the more recklessly the copilot spends. Rate is scaled by ESCALATION_PER_PROMPT raised to the
  * number of prompts completed so far, so burn is roughly linear early on and absurd by prompt 10+.
+ * Tuned alongside {@link BURN_RATE_PER_SUBAGENT} for a skill-monotonic score curve: reaching
+ * deeper rounds (both directly, via escalation, and indirectly, via the bigger swarms unlocked
+ * at rounds 2/4/6) is the entire skill expression -- the swarms themselves never have anything
+ * to do with the task on screen.
  */
-const ESCALATION_PER_PROMPT = 1.6;
+const ESCALATION_PER_PROMPT = 2.0;
 
 /** The shape returned by {@link useGame}. */
 export interface UseGameReturn {
@@ -84,6 +94,35 @@ const TIMEUP_MESSAGES: string[] = [
 
 /** How many further prompt submissions pass before a launched swarm "reports back". */
 const REPORT_DUE_AFTER_PROMPTS = 2;
+
+/**
+ * Depth at which the engine starts injecting a swarm on every subsequent even round, once the
+ * fixed round-2/round-4 tiers have passed. Reaching this depth means the interview has fully
+ * collapsed into an ambient swarm-summoning ritual, unrelated to whatever is being typed.
+ */
+const SWARM_ESCALATION_ROUND = 6;
+
+/**
+ * Maps a completed-prompt round number to the swarm tier the engine injects into that round's
+ * response, or `null` if no swarm fires this round. Swarms are injected purely by depth --
+ * round 2 gets a small swarm, round 4 a medium one, round 6 (and every even round after it) a
+ * full 128-agent swarm -- NEVER by scenario content. The swarm always has nothing to do with
+ * the task the player just typed; that mismatch is the joke. Reaching deeper rounds (faster
+ * typing, fewer errors) is the skill expression that unlocks bigger, funnier, more expensive
+ * swarms.
+ */
+function swarmTierForRound(round: number): SwarmTier | null {
+    if (round === 2) {
+        return 'small';
+    }
+    if (round === 4) {
+        return 'medium';
+    }
+    if (round >= SWARM_ESCALATION_ROUND && round % 2 === 0) {
+        return 'large';
+    }
+    return null;
+}
 
 /**
  * Prompt-count spacing for the fake context-compaction gag: the first compaction is scheduled
@@ -686,6 +725,7 @@ class GameEngine {
         this.syncClock();
 
         s.promptsCompleted += 1;
+        const round = s.promptsCompleted;
         s.messages = [...s.messages, { id: randomId(), role: 'user', text: prompt }];
         s.currentPrompt = null;
         s.typedCount = 0;
@@ -711,18 +751,25 @@ class GameEngine {
             if (this.state.phase !== 'thinking') {
                 return;
             }
-            // Any subagents "launched" by this response start burning tokens immediately (forever),
-            // and are scheduled to "report back" a couple of tasks from now.
-            for (const beat of scenario.response) {
-                if (beat.kind === 'subagents') {
-                    this.state.subagentCount += beat.count;
-                    this.state.pendingReports.push({
-                        count: beat.count,
-                        dueAtPrompts: this.state.promptsCompleted + REPORT_DUE_AFTER_PROMPTS,
-                    });
-                }
+            // The engine (not the scenario) decides whether this round gets a swarm, purely by
+            // depth -- see swarmTierForRound. When it does, the beat is injected into a COPY of
+            // this scenario's response, immediately before the final punchline beat, so whatever
+            // the player just typed still lands last. Any subagents "launched" this way start
+            // burning tokens immediately (forever), and are scheduled to "report back" a couple
+            // of tasks from now.
+            let responseBeats = scenario.response;
+            const tier = swarmTierForRound(round);
+            if (tier !== null) {
+                const swarmBeat = buildSwarmBeat(tier);
+                const lastIndex = responseBeats.length - 1;
+                responseBeats = [...responseBeats.slice(0, lastIndex), swarmBeat, responseBeats[lastIndex]!];
+                this.state.subagentCount += swarmBeat.count;
+                this.state.pendingReports.push({
+                    count: swarmBeat.count,
+                    dueAtPrompts: round + REPORT_DUE_AFTER_PROMPTS,
+                });
             }
-            this.pushStreamingAgentMessage('', 'response', scenario.response);
+            this.pushStreamingAgentMessage('', 'response', responseBeats);
             this.emit();
         }, randomThinkingDelayMs());
     }
