@@ -35,17 +35,13 @@ export function TypingComposer({ prompt, typedCount, lastKeyWasError }: TypingCo
         >
             <p className="min-h-[4.5em] break-words whitespace-pre-wrap leading-relaxed">
                 <span className="text-accent">&gt;</span> <span className="text-ink-bright">{typed}</span>
+                {/* Plain inline span: an inline-block here would be an atomic box the browser may
+                    wrap before/after mid-word, making the line-break point oscillate as the cursor
+                    nears the edge (characters visibly slide between lines). The block-cursor blink
+                    is done purely with a background/color keyframe swap instead. */}
                 {current && (
-                    <span className="relative inline-block">
-                        <span className="text-ink-faint">{current}</span>
-                        <span
-                            aria-hidden="true"
-                            className={`absolute inset-0 flex animate-caret-blink items-center justify-center ${
-                                lastKeyWasError ? 'bg-danger text-bg' : 'bg-accent text-bg'
-                            }`}
-                        >
-                            {current}
-                        </span>
+                    <span className={lastKeyWasError ? 'bg-danger text-bg' : 'animate-cursor-blink'}>
+                        {current}
                     </span>
                 )}
                 <span className="text-ink-faint">{rest}</span>
