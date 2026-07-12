@@ -32,9 +32,14 @@ import {
 
 /** Interval cadence for the master wall-clock/typing-timer tick, once armed. */
 const TICK_MS = 60;
-/** Random delay range (inclusive) for the fake "thinking" pause after submit. */
-const THINKING_DELAY_MIN_MS = 600;
-const THINKING_DELAY_MAX_MS = 900;
+/**
+ * Random delay range (inclusive) for the fake "thinking" pause after submit — long enough to
+ * pretend an LLM is on the other side. Skewed toward the short end (see
+ * {@link randomThinkingDelayMs}) so most replies feel snappy-ish with the occasional 4s stall.
+ * The wall clock keeps running through it: the copilot's dawdling is billed to the candidate.
+ */
+const THINKING_DELAY_MIN_MS = 1_000;
+const THINKING_DELAY_MAX_MS = 4_000;
 
 /** Cadence of the comedic token-burn meter. */
 const BURN_TICK_MS = 100;
@@ -209,8 +214,13 @@ function randomId(): string {
     return Math.random().toString(36).slice(2);
 }
 
+/**
+ * Picks the fake time-to-first-token for a reply. `random() ** 1.6` skews the draw toward the
+ * short end: median lands near ~1.9s, but the full 4s stall still happens often enough to feel
+ * like a real model having a moment.
+ */
 function randomThinkingDelayMs(): number {
-    return THINKING_DELAY_MIN_MS + Math.random() * (THINKING_DELAY_MAX_MS - THINKING_DELAY_MIN_MS);
+    return THINKING_DELAY_MIN_MS + Math.random() ** 1.6 * (THINKING_DELAY_MAX_MS - THINKING_DELAY_MIN_MS);
 }
 
 /** Returns the next scenario in the queue, reshuffling (and continuing) when exhausted. */
