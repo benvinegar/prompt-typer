@@ -1,3 +1,5 @@
+import { loadPersonalBest } from '@/lib/personal-best';
+
 export interface StartScreenProps {
     onStart: () => void;
 }
@@ -18,6 +20,8 @@ function CheckIcon() {
 
 /** Centered hero shown at phase 'idle': title, pitch, rules, and the START button. */
 export function StartScreen({ onStart }: StartScreenProps) {
+    const pb = loadPersonalBest();
+
     return (
         <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-16 text-center">
             <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-bg-panel shadow-[0_0_32px_-8px_var(--color-accent)]">
@@ -48,6 +52,14 @@ export function StartScreen({ onStart }: StartScreenProps) {
                     <span>Wrong keys don't advance. The last key sends it — no Enter needed.</span>
                 </li>
             </ul>
+
+            {pb && (
+                <p className="mt-6 text-sm text-ink-dim">
+                    Your record: <span className="font-mono font-semibold text-accent-bright">{pb.wpm} WPM</span>
+                    {' — '}
+                    <span className="text-ink">&ldquo;{pb.rankTitle}&rdquo;</span>
+                </p>
+            )}
 
             <button
                 type="button"

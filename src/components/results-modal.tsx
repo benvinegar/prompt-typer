@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { getRankForWpm, RANK_TITLES } from '@/data/titles';
 import type { GameStats } from '@/game/types';
-import { getRankForWpm } from '@/data/titles';
+import { loadPersonalBest, recordRunIfBest, type PersonalBest } from '@/lib/personal-best';
+import { buildShareText, downloadCardAsPng, shareResult } from '@/lib/share';
 
 export interface ResultsModalProps {
     stats: GameStats;
@@ -19,23 +21,48 @@ function fakeCost(tokens: number): string {
     return `$${((tokens / 1_000_000) * FAKE_DOLLARS_PER_MILLION_TOKENS).toFixed(2)}`;
 }
 
-/** Builds the shareable brag text using the player's actual run stats. */
-function buildShareText(stats: GameStats, title: string): string {
-    const subagents = stats.subagentCount > 0 ? ` My copilot burned ${formatTokens(stats.tokensBurned)} tokens and left ${stats.subagentCount} subagents running.` : '';
-    return `My vibe coding interview verdict: "${title}" — ${stats.wpm} WPM, ${stats.accuracy}% acc, ${stats.tokensPerSecond} tok/s.${subagents} Think you'd get the offer? Prompt Faster`;
-}
-
 /** Dark overlay + centered, screenshot-friendly card showing the final rank and stat grid. */
 export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps) {
-    const [copied, setCopied] = useState(false);
-    const rank = getRankForWpm(stats.wpm);
+    const [shareState, setShareState] = useState<'idle' | 'copied'>('idle');
+    const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
+    const [pbResult, setPbResult] = useState<{ pb: PersonalBest; isNew: boolean } | null>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
 
-    const handleCopy = () => {
+    const rank = getRankForWpm(stats.wpm);
+    const rankIndex = RANK_TITLES.findIndex((title) => title.title === rank.title);
+    const nextRank = rankIndex >= 0 && rankIndex < RANK_TITLES.length - 1 ? RANK_TITLES[rankIndex + 1] : null;
+
+    // Record this run against the stored personal best exactly once, for the run this modal is
+    // displaying. `stats` is fixed for the lifetime of the modal (a new run remounts it). The ref
+    // guard keeps StrictMode's double-invoked effect from recording twice (the second record
+    // would see the just-saved PB and wrongly report isNew=false).
+    const recordedRef = useRef<{ pb: PersonalBest; isNew: boolean } | null>(null);
+    useEffect(() => {
+        recordedRef.current ??= recordRunIfBest(stats);
+        setPbResult(recordedRef.current);
+    }, []);
+
+    const isNewPb = pbResult?.isNew ?? false;
+    const pb = pbResult?.pb ?? loadPersonalBest();
+
+    const handleShare = () => {
         const text = buildShareText(stats, rank.title);
-        void navigator.clipboard.writeText(text).then(() => {
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 2000);
+        void shareResult(text).then((result) => {
+            if (result === 'copied') {
+                setShareState('copied');
+                window.setTimeout(() => setShareState('idle'), 2000);
+            }
         });
+    };
+
+    const handleSaveCard = () => {
+        if (!cardRef.current) {
+            return;
+        }
+        setSaveState('saving');
+        void downloadCardAsPng(cardRef.current, `prompt-faster-${stats.wpm}wpm.png`)
+            .then(() => setSaveState('idle'))
+            .catch(() => setSaveState('error'));
     };
 
     return (
@@ -62,75 +89,118 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                     </svg>
                 </button>
 
-                <div className="text-center">
-                    <div className="text-6xl">{rank.emoji}</div>
-                    <h1 id="results-title" className="mt-3 font-sans text-2xl font-bold text-ink">
-                        {rank.title}
-                    </h1>
-                    <p className="mt-1 text-sm text-ink-dim">{rank.blurb}</p>
+                {/* Capture target for "Save card" — rank + stats only, no action buttons. */}
+                <div ref={cardRef}>
+                    {isNewPb && (
+                        <div className="mx-auto mb-4 flex w-fit animate-pulse items-center gap-1.5 rounded-full border border-accent-dim bg-accent-soft px-3 py-1 text-xs font-bold tracking-wide text-accent-bright uppercase">
+                            <span aria-hidden="true">✨</span> New personal best
+                        </div>
+                    )}
+
+                    <div className="text-center">
+                        <div className="text-6xl">{rank.emoji}</div>
+                        <h1 id="results-title" className="mt-3 font-sans text-2xl font-bold text-ink">
+                            {rank.title}
+                        </h1>
+                        <p className="mt-1 text-sm text-ink-dim">{rank.blurb}</p>
+                        {!isNewPb && pb && <p className="mt-2 text-xs text-ink-faint">PB: {pb.wpm} WPM</p>}
+                    </div>
+
+                    <div className="mt-5 flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-bg-panel px-3 py-2.5">
+                        {RANK_TITLES.map((title) => {
+                            const earned = title.title === rank.title;
+                            return (
+                                <span
+                                    key={title.title}
+                                    title={`${title.title} (${title.minWpm}+ WPM)`}
+                                    className={
+                                        earned
+                                            ? 'flex h-7 w-7 items-center justify-center rounded-full bg-accent text-base shadow-[0_0_12px_-2px_var(--color-accent)]'
+                                            : 'flex h-7 w-7 items-center justify-center rounded-full text-base opacity-30 grayscale'
+                                    }
+                                >
+                                    {title.emoji}
+                                </span>
+                            );
+                        })}
+                    </div>
+                    {nextRank && (
+                        <p className="mt-2 text-center text-xs text-ink-dim">
+                            +{nextRank.minWpm - stats.wpm} WPM to &ldquo;{nextRank.title}&rdquo;
+                        </p>
+                    )}
+
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                        <div className="col-span-2 rounded-2xl border border-accent-dim bg-accent-soft px-4 py-4 text-center">
+                            <div className="font-mono text-5xl font-bold tabular-nums text-accent-bright">
+                                {stats.wpm}
+                            </div>
+                            <div className="mt-1 text-xs tracking-wide text-ink-dim uppercase">WPM</div>
+                        </div>
+
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
+                                {stats.accuracy}%
+                            </div>
+                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Accuracy</div>
+                        </div>
+
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
+                                {stats.tokensPerSecond}
+                            </div>
+                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">
+                                est. output speed (tok/s)
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
+                                {stats.promptsCompleted}
+                            </div>
+                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Prompts</div>
+                        </div>
+
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
+                                {stats.errors}
+                            </div>
+                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Errors</div>
+                        </div>
+
+                        <div className="col-span-2 rounded-2xl border border-border bg-bg-panel px-4 py-3 text-center">
+                            <div className="font-mono text-2xl font-semibold tabular-nums text-accent-bright">
+                                {formatTokens(stats.tokensBurned)}
+                            </div>
+                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">
+                                tokens burned by your copilot (est. {fakeCost(stats.tokensBurned)})
+                            </div>
+                        </div>
+                    </div>
+
+                    {stats.subagentCount > 0 && (
+                        <p className="mt-3 text-center text-xs text-ink-faint">
+                            * {stats.subagentCount} subagents are still running. This is now your problem.
+                        </p>
+                    )}
                 </div>
-
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                    <div className="col-span-2 rounded-2xl border border-accent-dim bg-accent-soft px-4 py-4 text-center">
-                        <div className="font-mono text-5xl font-bold tabular-nums text-accent-bright">
-                            {stats.wpm}
-                        </div>
-                        <div className="mt-1 text-xs tracking-wide text-ink-dim uppercase">WPM</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
-                        <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
-                            {stats.accuracy}%
-                        </div>
-                        <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Accuracy</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
-                        <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
-                            {stats.tokensPerSecond}
-                        </div>
-                        <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">
-                            est. output speed (tok/s)
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
-                        <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
-                            {stats.promptsCompleted}
-                        </div>
-                        <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Prompts</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
-                        <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
-                            {stats.errors}
-                        </div>
-                        <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Errors</div>
-                    </div>
-
-                    <div className="col-span-2 rounded-2xl border border-border bg-bg-panel px-4 py-3 text-center">
-                        <div className="font-mono text-2xl font-semibold tabular-nums text-accent-bright">
-                            {formatTokens(stats.tokensBurned)}
-                        </div>
-                        <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">
-                            tokens burned by your copilot (est. {fakeCost(stats.tokensBurned)})
-                        </div>
-                    </div>
-                </div>
-
-                {stats.subagentCount > 0 && (
-                    <p className="mt-3 text-center text-xs text-ink-faint">
-                        * {stats.subagentCount} subagents are still running. This is now your problem.
-                    </p>
-                )}
 
                 <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
                     <button
                         type="button"
-                        onClick={handleCopy}
+                        onClick={handleShare}
                         className="flex-1 rounded-full border border-border-strong bg-bg-panel px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-bg-elevated"
                     >
-                        {copied ? 'Copied!' : 'Copy result'}
+                        {shareState === 'copied' ? 'Copied!' : 'Share'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSaveCard}
+                        disabled={saveState === 'saving'}
+                        aria-busy={saveState === 'saving'}
+                        className="flex-1 rounded-full border border-border-strong bg-bg-panel px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-bg-elevated disabled:opacity-60"
+                    >
+                        {saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Retry save' : 'Save card'}
                     </button>
                     <button
                         type="button"

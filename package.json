@@ -3,6 +3,7 @@
     "private": true,
     "version": "0.1.0",
     "type": "module",
+    "packageManager": "pnpm@11.9.0",
     "scripts": {
         "dev": "vite",
         "build": "tsc -b && vite build",
@@ -11,6 +12,7 @@
     },
     "dependencies": {
         "@tanstack/react-router": "^1.130.0",
+        "html-to-image": "^1.11.13",
         "react": "^19.1.0",
         "react-dom": "^19.1.0"
     },
