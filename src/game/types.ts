@@ -11,7 +11,7 @@
  * actively typing the current prompt, so the agent's streaming/thinking theatrics cost the
  * player wall clock but never inflate (or deflate) their measured typing speed.
  */
-export const GAME_DURATION_MS = 60_000;
+export const GAME_DURATION_MS = 120_000;
 
 /** Characters-per-token heuristic used for the joke "tokens/sec" stat. */
 export const CHARS_PER_TOKEN = 4;

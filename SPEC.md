@@ -7,13 +7,13 @@ Vite + React 19 + TanStack Router + Tailwind CSS 4. No server, no persistence be
 
 ## Game loop
 
-Two independent timers drive the run: a **wall clock** (`remainingMs`, 60s budget) that, once
+Two independent timers drive the run: a **wall clock** (`remainingMs`, 120s budget) that, once
 armed, ticks down continuously across every phase and never pauses again, and a **typing timer**
 (`activeTypingMs`) that only accrues while the player is actively typing the current prompt. WPM
 is computed from the typing timer alone, so the agent's streaming/thinking theatrics cost the
 player wall clock but never distort their measured typing speed.
 
-1. Start screen ("idle"). Big title, one-line pitch, START button. Explain: 60 seconds on the
+1. Start screen ("idle"). Big title, one-line pitch, START button. Explain: 2 minutes on the
    wall clock, armed by your first keystroke, running non-stop after that — including while the
    AI is busy showing off.
 2. The fake agent streams a short setup message char-by-char (phase `streaming`). The wall clock
@@ -38,7 +38,7 @@ player wall clock but never distort their measured typing speed.
 ## Scoring
 
 - WPM = (correctChars / 5) / (activeTypingMs / 60000) — `activeTypingMs` is the typing-only
-  timer, not the 60s wall clock, so streaming/thinking time never dilutes WPM.
+  timer, not the 120s wall clock, so streaming/thinking time never dilutes WPM.
 - accuracy = correctKeystrokes / totalKeystrokes * 100 (100 if none)
 - tokens/sec = (correctChars / 4) / (activeTypingMs / 1000)
 - Title: one of 10 ranks selected by WPM bands (see `src/data/titles.ts`).
@@ -71,7 +71,7 @@ interface UseGameReturn {
 Engine owns: shuffled scenario queue, transcript messages, per-key advance/error logic, auto-submit,
 phase transitions, and final stats -- across two independent timers. The UI owns the char-by-char
 reveal animation of agent messages and reports completion via `onAgentStreamDone()`. The wall clock
-(`remainingMs`, the 60s budget) is armed by the run's first keystroke and decrements in every phase
+(`remainingMs`, the 120s budget) is armed by the run's first keystroke and decrements in every phase
 (typing, streaming, thinking) until it hits 0, at which point it clamps and the run resolves to
 `finished` via a deadpan sign-off, even mid-stream or mid-think. The typing timer (`activeTypingMs`,
 what WPM is derived from) only accrues while `phase === 'typing'` and the current prompt has been

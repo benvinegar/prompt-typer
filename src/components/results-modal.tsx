@@ -96,8 +96,8 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                     )}
 
                     <div className="text-center">
-                        <div className="text-6xl">{rank.emoji}</div>
-                        <h1 id="results-title" className="mt-3 font-sans text-2xl font-bold text-ink">
+                        <div className="text-5xl">{rank.emoji}</div>
+                        <h1 id="results-title" className="mt-2 font-sans text-2xl font-bold text-ink">
                             {rank.title}
                         </h1>
                         <p className="mt-1 text-sm text-ink-dim">{rank.blurb}</p>
@@ -108,7 +108,7 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                         )}
                     </div>
 
-                    <div className="mt-5 flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-bg-panel px-3 py-2.5">
+                    <div className="mt-4 flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-bg-panel px-3 py-2.5">
                         {RANK_TITLES.map((title) => {
                             const earned = title.title === rank.title;
                             return (
@@ -132,7 +132,7 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                         </p>
                     )}
 
-                    <div className="mt-5 rounded-2xl border border-accent-dim bg-accent-soft px-4 py-4 text-center">
+                    <div className="mt-4 rounded-2xl border border-accent-dim bg-accent-soft px-4 py-3 text-center">
                         <div className="font-mono text-4xl font-bold tabular-nums text-accent-bright sm:text-5xl">
                             {formatTokensFull(stats.tokensBurned)}
                         </div>
@@ -142,20 +142,20 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                         <div className="mt-1 text-xs text-ink-faint">est. bill: {fakeCost(stats.tokensBurned)}</div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                    <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-2.5 text-center">
                             <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
                                 {stats.accuracy}%
                             </div>
                             <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Accuracy</div>
                         </div>
 
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-2.5 text-center">
                             <div className="font-mono text-2xl font-semibold tabular-nums text-ink">{stats.wpm}</div>
                             <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">WPM</div>
                         </div>
 
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-2.5 text-center">
                             <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
                                 {stats.tokensPerSecond}
                             </div>
@@ -164,14 +164,7 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
-                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
-                                {stats.promptsCompleted}
-                            </div>
-                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Prompts</div>
-                        </div>
-
-                        <div className="col-span-2 rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-2.5 text-center">
                             <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
                                 {stats.errors}
                             </div>
@@ -180,7 +173,7 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                     </div>
 
                     {stats.subagentCount > 0 && (
-                        <p className="mt-3 text-center text-xs text-ink-faint">
+                        <p className="mt-2.5 text-center text-xs text-ink-faint">
                             * {stats.subagentCount} subagents are still running. This is now your problem.
                         </p>
                     )}

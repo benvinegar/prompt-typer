@@ -24,7 +24,7 @@ function fakeCost(tokens: number): string {
 export function buildShareText(stats: GameStats, rankTitle: string): string {
     const subagents =
         stats.subagentCount > 0 ? ` ${stats.subagentCount} subagents still running.` : '';
-    return `I made my copilot burn ${formatTokensFull(stats.tokensBurned)} tokens (est. ${fakeCost(stats.tokensBurned)}) in a 60 second interview — "${rankTitle}", ${stats.wpm} WPM, ${stats.accuracy}% acc.${subagents} Can you burn more?`;
+    return `I made my copilot burn ${formatTokensFull(stats.tokensBurned)} tokens (est. ${fakeCost(stats.tokensBurned)}) in a 2 minute interview — "${rankTitle}", ${stats.wpm} WPM, ${stats.accuracy}% acc.${subagents} Can you burn more?`;
 }
 
 /**

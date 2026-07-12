@@ -10,5 +10,5 @@ export const OPENING_MESSAGES: string[] = [
     "Your resume said 'move fast.' Let's see if you can also type fast. Begin whenever.",
     "This is a vibe coding evaluation. There are no wrong answers, only unreviewed pull requests.",
     "Your copilot is ready, over-caffeinated, and legally required to say this is not medical advice.",
-    "Sixty seconds on the clock. Ship first, ask questions never. That is the whole rubric.",
+    "Two minutes on the clock. Ship first, ask questions never. That is the whole rubric.",
 ];

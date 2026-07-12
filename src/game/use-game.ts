@@ -74,7 +74,7 @@ const TIMEUP_MESSAGES: string[] = [
     'Time. Pencils down. HR will be in touch.',
     'That is time. Please step away from the keyboard, candidate.',
     "Clock's out. We'll circle back on next steps, allegedly.",
-    'Sixty seconds. Stop typing. The rubric has already judged you.',
+    'Two minutes. Stop typing. The rubric has already judged you.',
 ];
 
 /** How many further prompt submissions pass before a launched swarm "reports back". */

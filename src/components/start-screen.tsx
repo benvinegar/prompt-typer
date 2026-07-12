@@ -51,7 +51,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
                 <li className="flex items-start gap-2.5 text-sm text-ink-dim">
                     <CheckIcon />
                     <span>
-                        60 seconds on the wall clock. It starts on your first keystroke — and the AI's
+                        2 minutes on the wall clock. It starts on your first keystroke — and the AI's
                         theatrics run YOUR clock.
                     </span>
                 </li>

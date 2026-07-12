@@ -14,12 +14,12 @@ You're an engineering candidate being evaluated on your ability to vibe code. A 
 streams you a setup, then a ghost prompt appears in the composer — type it exactly to send it.
 The goal: burn as many tokens as possible. Tokens burned is your score.
 
-- **60 seconds on the wall clock.** It's armed by your first keystroke, then runs non-stop
+- **2 minutes on the wall clock.** It's armed by your first keystroke, then runs non-stop
   through everything — typing, the agent's streaming replies, its fake "thinking" pauses. The
   AI's theatrics run your clock, not a frozen one.
 - **WPM is measured separately.** A dedicated typing timer only counts time you're actually
   typing the current prompt, so reading a setup line or watching the agent stall doesn't touch
-  your typing speed — it just eats into your 60 seconds.
+  your typing speed — it just eats into your 2 minutes.
 - **Wrong keys don't advance.** No backspacing — a bad keystroke just costs you.
 - **The last correct key auto-sends** the prompt, no Enter required.
 - **The burn rate compounds.** Every prompt you finish makes the copilot spend more
