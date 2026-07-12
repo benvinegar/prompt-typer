@@ -9,6 +9,9 @@ import { formatTokensFull } from '@/lib/format';
 /** Joke $/1M-token rate used for the fake bill, mirrored from the results card. */
 const FAKE_DOLLARS_PER_MILLION_TOKENS = 23.7;
 
+/** Canonical game URL included with every share so a brag is also a link back in. */
+const GAME_URL = 'https://benvinegar.github.io/prompt-typer/';
+
 function fakeCost(tokens: number): string {
     const dollars = Math.round((tokens / 1_000_000) * FAKE_DOLLARS_PER_MILLION_TOKENS);
     return `$${dollars.toLocaleString('en-US')}`;
@@ -21,7 +24,7 @@ function fakeCost(tokens: number): string {
 export function buildShareText(stats: GameStats, rankTitle: string): string {
     const subagents =
         stats.subagentCount > 0 ? ` ${stats.subagentCount} subagents still running.` : '';
-    return `I made my copilot burn ${formatTokensFull(stats.tokensBurned)} tokens (est. ${fakeCost(stats.tokensBurned)}) in a 60 second interview — "${rankTitle}", ${stats.wpm} WPM, ${stats.accuracy}% acc.${subagents} Prompt Faster`;
+    return `I made my copilot burn ${formatTokensFull(stats.tokensBurned)} tokens (est. ${fakeCost(stats.tokensBurned)}) in a 60 second interview — "${rankTitle}", ${stats.wpm} WPM, ${stats.accuracy}% acc.${subagents} Can you burn more?`;
 }
 
 /**
@@ -36,7 +39,8 @@ export function buildShareText(stats: GameStats, rankTitle: string): string {
 export async function shareResult(text: string): Promise<'shared' | 'copied'> {
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
         try {
-            await navigator.share({ text });
+            // The URL rides in its own field so share targets render it as a link exactly once.
+            await navigator.share({ text, url: GAME_URL });
             return 'shared';
         } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {
@@ -45,7 +49,7 @@ export async function shareResult(text: string): Promise<'shared' | 'copied'> {
             // Fall through to the clipboard fallback for any other share failure.
         }
     }
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(`${text} ${GAME_URL}`);
     return 'copied';
 }
 
