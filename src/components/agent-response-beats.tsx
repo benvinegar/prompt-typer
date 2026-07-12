@@ -4,6 +4,10 @@ import { BrailleSpinner } from '@/components/braille-spinner';
 import { StreamingText } from '@/components/streaming-text';
 import { AgentBulletLine } from '@/components/terminal-line';
 
+/** Random breath between consecutive beats, so output doesn't machine-gun onto the screen. */
+const BEAT_GAP_MIN_MS = 300;
+const BEAT_GAP_MAX_MS = 700;
+
 /** Spinner time for tool beats that don't specify their own duration. */
 const DEFAULT_TOOL_MS = 700;
 /** How long a subagents beat holds the sequence before handing control on (the spinner never stops). */
@@ -108,7 +112,29 @@ export function AgentResponseBeats({ beats, streaming, onDone }: AgentResponseBe
     const [playedCount, setPlayedCount] = useState(streaming ? 0 : beats.length);
     const doneFiredRef = useRef(false);
 
-    const advance = () => setPlayedCount((count) => Math.min(count + 1, beats.length));
+    // A completed beat doesn't reveal the next one instantly: a small random breath between
+    // beats (like a model deciding what to do next) keeps the playback from feeling canned.
+    const gapTimerRef = useRef<number | null>(null);
+    const advance = () => {
+        if (gapTimerRef.current !== null) {
+            return;
+        }
+        gapTimerRef.current = window.setTimeout(
+            () => {
+                gapTimerRef.current = null;
+                setPlayedCount((count) => Math.min(count + 1, beats.length));
+            },
+            BEAT_GAP_MIN_MS + Math.random() * (BEAT_GAP_MAX_MS - BEAT_GAP_MIN_MS),
+        );
+    };
+    useEffect(() => {
+        return () => {
+            if (gapTimerRef.current !== null) {
+                window.clearTimeout(gapTimerRef.current);
+                gapTimerRef.current = null;
+            }
+        };
+    }, []);
 
     // Tool and subagents beats complete on a timer (thinking/text beats advance via onDone).
     const activeBeat = streaming && playedCount < beats.length ? beats[playedCount] : undefined;
