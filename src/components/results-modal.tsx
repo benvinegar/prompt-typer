@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { SHAME_VERDICTS } from '@/data/shame-titles';
 import { getRankForWpm, RANK_TITLES } from '@/data/titles';
-import type { GameStats } from '@/game/types';
+import type { GameStats, RankTitle } from '@/game/types';
 import { formatTokensCompact, formatTokensFull } from '@/lib/format';
 import { loadPersonalBest, recordRunIfBest, type PersonalBest } from '@/lib/personal-best';
 import { buildShareText, downloadCardAsPng, shareResult } from '@/lib/share';
@@ -51,6 +51,8 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
     const [shareState, setShareState] = useState<'idle' | 'copied'>('idle');
     const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
     const [pbResult, setPbResult] = useState<{ pb: PersonalBest; isNew: boolean } | null>(null);
+    /** Rank the player is exploring on the ladder (hover/focus/tap); null shows the default line. */
+    const [inspectedRank, setInspectedRank] = useState<RankTitle | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
 
     // A flagged run (`botVerdict` set) shows a shame verdict instead of the normal WPM rank, and
@@ -151,28 +153,55 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                         </div>
 
                         {!isDisqualified && (
-                            <div className="mt-4 flex items-center justify-center gap-1.5">
+                            <div
+                                className="mt-4 flex items-center justify-center gap-1.5"
+                                onMouseLeave={() => setInspectedRank(null)}
+                            >
                                 {RANK_TITLES.map((title) => {
                                     const earned = title.title === rank.title;
                                     return (
-                                        <span
+                                        <button
                                             key={title.title}
-                                            title={`${title.title} (${title.minWpm}+ WPM)`}
+                                            type="button"
+                                            aria-label={`${title.title} (${title.minWpm}+ wpm)`}
+                                            onMouseEnter={() => setInspectedRank(title)}
+                                            onFocus={() => setInspectedRank(title)}
+                                            onBlur={() => setInspectedRank(null)}
+                                            onClick={() => setInspectedRank(title)}
                                             className={
                                                 earned
                                                     ? 'rounded-full text-lg ring-1 ring-accent'
-                                                    : 'rounded-full text-lg opacity-30 grayscale'
+                                                    : 'rounded-full text-lg opacity-30 grayscale transition hover:opacity-100 hover:grayscale-0'
                                             }
                                         >
                                             {title.emoji}
-                                        </span>
+                                        </button>
                                     );
                                 })}
                             </div>
                         )}
-                        {!isDisqualified && nextRank && (
-                            <p className="mt-2 text-center text-xs text-ink-dim">
-                                +{nextRank.minWpm - stats.wpm} wpm to &ldquo;{nextRank.title}&rdquo;
+                        {!isDisqualified && (
+                            <p className="mt-2 min-h-[3em] text-center text-xs">
+                                {inspectedRank ? (
+                                    <>
+                                        <span className="font-bold text-ink-bright">{inspectedRank.title}</span>
+                                        <span className="text-ink-faint"> · {inspectedRank.minWpm}+ wpm</span>
+                                        <br />
+                                        <span className="text-ink-dim">{inspectedRank.blurb}</span>
+                                    </>
+                                ) : nextRank ? (
+                                    <span className="text-ink-dim">
+                                        +{nextRank.minWpm - stats.wpm} wpm to &ldquo;{nextRank.title}&rdquo;
+                                        <br />
+                                        <span className="text-ink-faint">hover the ladder to browse ranks</span>
+                                    </span>
+                                ) : (
+                                    <span className="text-ink-dim">
+                                        top of the ladder
+                                        <br />
+                                        <span className="text-ink-faint">hover the ladder to browse ranks</span>
+                                    </span>
+                                )}
                             </p>
                         )}
 
