@@ -31,10 +31,10 @@ function Spinner() {
 /** A fake tool-call row: spinner while "running", then a green check with the tool name + detail. */
 function ToolRow({ name, detail, active }: { name: string; detail: string; active: boolean }) {
     return (
-        <div className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-bg-elevated px-2.5 py-1.5 font-mono text-[13px]">
-            {active ? <Spinner /> : <CheckIcon />}
+        <div className="flex min-w-0 items-start gap-2 rounded-lg border border-border bg-bg-elevated px-2.5 py-1.5 font-mono text-[13px]">
+            <span className="mt-0.5 flex shrink-0">{active ? <Spinner /> : <CheckIcon />}</span>
             <span className="shrink-0 font-semibold text-ink">{name}</span>
-            <span className="truncate text-ink-dim">{detail}</span>
+            <span className="min-w-0 break-words text-ink-dim">{detail}</span>
         </div>
     );
 }
@@ -45,12 +45,14 @@ function ToolRow({ name, detail, active }: { name: string; detail: string; activ
  */
 function SubagentsRow({ count, detail }: { count: number; detail: string }) {
     return (
-        <div className="flex min-w-0 items-center gap-2 rounded-lg border border-accent-dim bg-accent-soft px-2.5 py-1.5 font-mono text-[13px]">
-            <Spinner />
+        <div className="flex min-w-0 items-start gap-2 rounded-lg border border-accent-dim bg-accent-soft px-2.5 py-1.5 font-mono text-[13px]">
+            <span className="mt-0.5 flex shrink-0">
+                <Spinner />
+            </span>
             <span className="shrink-0 font-semibold text-accent-bright">
                 Agents <span className="tabular-nums">x{count}</span>
             </span>
-            <span className="truncate text-ink-dim">{detail}</span>
+            <span className="min-w-0 break-words text-ink-dim">{detail}</span>
         </div>
     );
 }

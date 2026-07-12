@@ -73,13 +73,13 @@ function ComboIndicator({ streak }: { streak: number }) {
     const tier = getComboTier(streak);
     return (
         <span
-            className={`hidden w-[92px] shrink-0 items-center gap-1 overflow-hidden transition-opacity duration-200 sm:flex ${
+            className={`hidden w-[112px] shrink-0 items-center justify-end gap-1 transition-opacity duration-200 sm:flex ${
                 tier ? 'opacity-100' : 'opacity-0'
             } ${tier?.colorClass ?? ''} ${tier?.emphasisClass ?? ''}`}
             aria-hidden={tier ? undefined : true}
         >
             {tier?.showFlame && <FlameIcon className="h-3 w-3 shrink-0" />}
-            <span className="truncate tabular-nums">{tier?.label ?? ''}</span>
+            <span className="whitespace-nowrap tabular-nums">{tier?.label ?? ''}</span>
         </span>
     );
 }
